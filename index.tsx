@@ -1,7 +1,15 @@
 let React = {
   createElement: (tag, props, ...children) => {
     if (typeof tag === "function") {
-      return tag(props);
+      try {
+        return tag(props);
+      } catch ({ promise, key }) {
+        promise.then((data) => {
+          promiseCache.set(key, data);
+          rerender();
+        });
+        return { tag: "h1", props: { children: ["I am  loading..."] } };
+      }
     }
     const element = { tag, props: { ...props, children } };
 
@@ -23,9 +31,25 @@ const useState = (initialState) => {
   return [states[FROZEN_CURSOR], setState];
 };
 
+const promiseCache = new Map();
+
+const createResource = (thingThatReturnASomething, key) => {
+  if (promiseCache.has(key)) {
+    return promiseCache.get(key);
+  }
+  throw { promise: thingThatReturnASomething(), key };
+};
+
 const App = () => {
   const [name, setName] = useState("gk");
   const [age, setAge] = useState(0);
+  const dogPhotoUrl = createResource(
+    () =>
+      fetch("https://dog.ceo/api/breeds/image/random")
+        .then((res) => res.json())
+        .then((payload) => payload.message),
+    "dogPhoto"
+  );
 
   return (
     <div className="react-2021">
@@ -43,6 +67,9 @@ const App = () => {
         Des
       </button>
       <p>my age is {age}</p>
+      <h3>
+        <img src={dogPhotoUrl} alt="my dog" />
+      </h3>
     </div>
   );
 };

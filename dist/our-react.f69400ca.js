@@ -145,7 +145,22 @@ var React = {
     }
 
     if (typeof tag === "function") {
-      return tag(props);
+      try {
+        return tag(props);
+      } catch (_a) {
+        var promise = _a.promise,
+            key_1 = _a.key;
+        promise.then(function (data) {
+          promiseCache.set(key_1, data);
+          rerender();
+        });
+        return {
+          tag: "h1",
+          props: {
+            children: ["I am  loading..."]
+          }
+        };
+      }
     }
 
     var element = {
@@ -173,6 +188,19 @@ var useState = function useState(initialState) {
   return [states[FROZEN_CURSOR], setState];
 };
 
+var promiseCache = new Map();
+
+var createResource = function createResource(thingThatReturnASomething, key) {
+  if (promiseCache.has(key)) {
+    return promiseCache.get(key);
+  }
+
+  throw {
+    promise: thingThatReturnASomething(),
+    key: key
+  };
+};
+
 var App = function App() {
   var _a = useState("gk"),
       name = _a[0],
@@ -182,6 +210,13 @@ var App = function App() {
       age = _b[0],
       setAge = _b[1];
 
+  var dogPhotoUrl = createResource(function () {
+    return fetch("https://dog.ceo/api/breeds/image/random").then(function (res) {
+      return res.json();
+    }).then(function (payload) {
+      return payload.message;
+    });
+  }, "dogPhoto");
   return React.createElement("div", {
     className: "react-2021"
   }, React.createElement("h1", null, "Hello, ", name, "!"), React.createElement("input", {
@@ -201,7 +236,10 @@ var App = function App() {
     onclick: function onclick() {
       return setAge(age - 1);
     }
-  }, "Des"), React.createElement("p", null, "my age is ", age));
+  }, "Des"), React.createElement("p", null, "my age is ", age), React.createElement("h3", null, React.createElement("img", {
+    src: dogPhotoUrl,
+    alt: "my dog"
+  })));
 };
 
 var rerender = function rerender() {
@@ -259,7 +297,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51654" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55577" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
